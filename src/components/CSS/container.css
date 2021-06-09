@@ -1,0 +1,10 @@
+.container {
+    width: 100%;
+    min-height: 100vh;
+    margin: 0;
+    padding: 0;
+}
+.topBar {
+    height: 6vh;
+    background-color: #7b87ca;
+}
