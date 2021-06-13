@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from "react";
+import AddBox from "./addBox"
 import Grid from "@material-ui/core/Grid";
-import { makeStyles, Paper,  } from "@material-ui/core";
-import { Pagination } from "@material-ui/lab"
+import { makeStyles, Paper, TextField, Button, Dialog } from "@material-ui/core";
+import { Autocomplete, Pagination } from "@material-ui/lab";
+import AddIcon from "@material-ui/icons/Add";
 import axios from "axios";
 import {
   Table,
@@ -13,44 +15,66 @@ import {
   TableContainer,
   TablePagination,
 } from "@material-ui/core";
-import "./CSS/users.css"
+import EditIcon from "@material-ui/icons/Edit"
+import FiberManualRecordIcon from "@material-ui/icons/FiberManualRecord"
+import FiberManualRecordOutlinedIcon from "@material-ui/icons/FiberManualRecordOutlined"
+import DeleteForeverOutlinedIcon from '@material-ui/icons/DeleteForeverOutlined';
+import "./CSS/users.css";
 
 const classes = makeStyles({
   tableHeader: {
     background: "#d4d6d9",
   },
-  
 });
 
 const Users = () => {
   const [userData, setUserData] = useState();
-  const [page, setPage] = useState(0)
+  const [filter, setFilter] = useState({
+    userName: "",
+    fullName: "",
+    email: "",
+    userGroup: "",
+    active: "",
+  });
+  const [userGroupData, setUserGroupData] = useState([]);
+  const [dataReceived, setDataReceived] = useState(false);
+
+  // MODAL STATE
+  const [editingUser, setEditingUser] = useState(null)
+  const [manageOpen, setManageOpen] = useState(false)
+
   const styles = classes();
-  console.log(page)
-
-  
-
 
   function pageCalc() {
-    let pages
+    let pages;
     if (userData !== undefined) {
-    if (userData.totalCount % 10  > 0)  {
-      pages = Math.floor((userData.totalCount / 10) + 1)
-    } else {pages = userData.totalCount / 10}}
-    return pages
+      if (userData.totalCount % 10 > 0) {
+        pages = Math.floor(userData.totalCount / 10 + 1);
+      } else {
+        pages = userData.totalCount / 10;
+      }
+    }
+    return pages;
   }
-
-  function handlePageChange(event, value) {
-      setPage(value - 1)
-  }
-
+  const groupCombo = {};
+  const comboStatus = [
+    { name: "აქტიური", value: true },
+    { name: "არააქტიური", value: false },
+    { name: "აქტიური/არააქტიური", value: "" },
+  ];
 
   useEffect(() => {
     axios
-      .get("http://13.51.98.179:8888/users", { params: {limit: 10, page: page} })
-      .then((res) => setUserData(res.data))
-      .then(console.log(userData));
-  }, [page]);
+      .get("http://13.51.98.179:8888/userGroups/forSelection")
+      //  .then(res => console.log(res.data.map(x => x.name)))
+      .then((res) => setUserGroupData(res.data.map((x) => x)))
+      .then(console.log(userGroupData))
+  }, []);
+
+  useEffect(() => {
+    console.log(filter);
+    console.log(userGroupData);
+  }, [filter, userGroupData]);
 
   function formatDate(rawDate) {
     const date = rawDate.match(/.*(?=T)/);
@@ -59,26 +83,111 @@ const Users = () => {
     return `${date} ${time}`;
   }
 
+  function getData() {
+    const searchParams = {
+      limit: 10,
+      page: 0,
+      fullName: filter.fullName,
+      email: filter.email,
+      username: filter.userName,
+      userGroup: filter.userGroup,
+      active: filter.active,
+    };
+    console.log(searchParams);
+
+    axios
+      .get("http://13.51.98.179:8888/users", {
+        params: {
+          limit: 10,
+          fullName: filter.fullName,
+          email: filter.email,
+          userGroup: filter.userGroup,
+          active: filter.active,
+          ...(filter.username === "" ? {} : { username: filter.username }),
+        },
+      })
+      .then((res) => setUserData(res.data))
+      .then(setDataReceived(true));
+  }
+
+  function handlePageChange(event, value) {
+    let curPage = value - 1;
+    axios
+      .get("http://13.51.98.179:8888/users", {
+        params: {
+          limit: 10,
+          page: curPage,
+          fullName: filter.fullName,
+          email: filter.email,
+          userGroup: filter.userGroup,
+          active: filter.active,
+          ...(filter.username === "" ? {} : { username: filter.username }),
+        },
+      })
+      .then((res) => setUserData(res.data))
+      .then(setDataReceived(true));
+  }
+
+
+
+
+
+  function handleManageOpen() {
+    setManageOpen(true)
+  }
+  function handleManageClose() {
+    setManageOpen(false)
+    // setEditMode(false)
+  }
+  function handleEditOpen(user) {
+    setEditingUser(user)
+    // setEditMode(true)
+    setManageOpen(true)
+  }
+
+  function activeIcon(active) {
+    if (!active) {
+      return <FiberManualRecordOutlinedIcon color = "secondary" />
+    } else {
+      return <FiberManualRecordIcon style={{color: "green"}} />
+    }
+  }
+
+
+
+
+
+
+
+
   function renderRows() {
     return (
       <TableBody>
         {userData !== undefined &&
           userData.users.map((user) => {
             return (
-              <TableRow >
+              <TableRow>
                 <TableCell>{user.id}</TableCell>
                 <TableCell>{user.username}</TableCell>
                 <TableCell>{user.fullName}</TableCell>
                 <TableCell>
                   {user.userGroups.map((x, i) => {
-                    return user.userGroups[i + 1] ? `${x.name}, ` : `${x.name}`
+                    return user.userGroups[i + 1] ? `${x.name}, ` : `${x.name}`;
                   })}
                 </TableCell>
                 <TableCell>{formatDate(user.createTime)}</TableCell>
                 <TableCell>{formatDate(user.lastUpdateTime)}</TableCell>
-                <TableCell>{user.active}</TableCell>
-                <TableCell>EDIT</TableCell>
-                <TableCell>DELETE</TableCell>
+                <TableCell>{activeIcon(user.active)}</TableCell>
+                <TableCell>
+                  <Button color="primary" variant = "contained" onClick={() => handleEditOpen(user.id)}>
+                    <EditIcon  />
+                  </Button>
+                </TableCell>
+                <TableCell>
+                  <Button color="primary" variant = "contained">
+                    <DeleteForeverOutlinedIcon />
+                  </Button>
+                </TableCell>
               </TableRow>
             );
           })}
@@ -89,32 +198,133 @@ const Users = () => {
   return (
     <Grid>
       <Grid container></Grid>
+      <Grid container>
+        <form style={{ width: "100%" }}>
+          <Grid
+            container
+            direction="row"
+            spacing={2}
+            alignItems="center"
+            style={{ padding: "0.5em 1em" }}
+          >
+            <Grid item xs={2}>
+              <TextField
+                variant="outlined"
+                onChange={(e) =>
+                  setFilter({ ...filter, userName: e.target.value })
+                }
+                value={filter.userName}
+                label="სახელი"
+              />
+            </Grid>
+            <Grid item xs={2}>
+              <TextField
+                variant="outlined"
+                onChange={(e) =>
+                  setFilter({ ...filter, fullName: e.target.value })
+                }
+                value={filter.fullName}
+                label="მომხამრებლის სახელი"
+              />
+            </Grid>
+            <Grid item xs={2}>
+              <TextField
+                variant="outlined"
+                onChange={(e) =>
+                  setFilter({ ...filter, email: e.target.value })
+                }
+                value={filter.email}
+                label="ელ. ფოსტა"
+              />
+            </Grid>
+            <Grid item xs={2}>
+              <Autocomplete
+                options={userGroupData}
+                getOptionLabel={((option) => option.name)}
+                onChange={(event, value) =>
+                  value && setFilter({ ...filter, userGroup: value.id })
+                }
+                renderInput={(params) => (
+                  <TextField {...params} label="ჯგუფი" />
+                )}
+              ></Autocomplete>
+            </Grid>
+            <Grid item xs={2}>
+              <Autocomplete
+                options={comboStatus}
+                getOptionLabel={(option) => option.name}
+                onChange={(event, value) =>
+                  value && setFilter({ ...filter, active: value.value })
+                }
+                renderInput={(params) => (
+                  <TextField {...params} label="სტატუსი" />
+                )}
+              ></Autocomplete>
+            </Grid>
+            <Grid item xs={1}>
+              <Button onClick={getData} variant="contained" color="primary">
+                ძებნა
+              </Button>
+             
+            </Grid>
+            <Grid item xs={1}>
+              <Button variant="contained" color="primary" onClick={handleManageOpen}>
+                <AddIcon />
+              </Button>
+              <Dialog open={manageOpen} onClose={handleManageClose} >
+                  <AddBox userID = {editingUser} editMode = {editingUser === null ? false : true} />
+                </Dialog>
+            </Grid>
+          </Grid>
+        </form>
+      </Grid>
       <TableContainer component={Paper}>
         <Table style={{ width: "100%" }}>
           <TableHead>
-            <TableRow className = {styles.tableHeader}>
-              <TableCell><p className = "table-header-text">ID</p></TableCell>
-              <TableCell><p className = "table-header-text">მომხმარებლის სახელი</p></TableCell>
-              <TableCell><p className = "table-header-text">სრული სახელი</p></TableCell>
-              <TableCell><p className = "table-header-text">ჯგუფები</p></TableCell>
-              <TableCell><p className = "table-header-text">შექმნის თარიღი</p></TableCell>
-              <TableCell><p className = "table-header-text">ბოლო რედაქტირების თარიღი</p></TableCell>
-              <TableCell><p className = "table-header-text">სტატუსი</p></TableCell>
-              <TableCell><p className = "table-header-text">რედაქტირება</p></TableCell>
-              <TableCell><p className = "table-header-text">წაშლა</p></TableCell>
+            <TableRow className={styles.tableHeader}>
+              <TableCell>
+                <p className="table-header-text">ID</p>
+              </TableCell>
+              <TableCell>
+                <p className="table-header-text">მომხმარებლის სახელი</p>
+              </TableCell>
+              <TableCell>
+                <p className="table-header-text">სრული სახელი</p>
+              </TableCell>
+              <TableCell>
+                <p className="table-header-text">ჯგუფები</p>
+              </TableCell>
+              <TableCell>
+                <p className="table-header-text">შექმნის თარიღი</p>
+              </TableCell>
+              <TableCell>
+                <p className="table-header-text">ბოლო რედაქტირების თარიღი</p>
+              </TableCell>
+              <TableCell>
+                <p className="table-header-text">სტატუსი</p>
+              </TableCell>
+              <TableCell>
+                <p className="table-header-text"></p>
+              </TableCell>
+              <TableCell>
+                <p className="table-header-text"></p>
+              </TableCell>
             </TableRow>
           </TableHead>
           {renderRows()}
         </Table>
-        
       </TableContainer>
-      <Grid container justify = "center" >
-        <Pagination shape="rounded" color="primary" count = {pageCalc()} onChange={handlePageChange} style={{padding: "0.5rem 0"}} />
+      <Grid container justify="center">
+        {dataReceived && (<Pagination
+          shape="rounded"
+          color="primary"
+          count={pageCalc()}
+          onChange={handlePageChange}
+          style={{ padding: "0.5rem 0" }}
+        />)}
       </Grid>
     </Grid>
   );
 };
-
-
 
 export default Users;

@@ -1,19 +1,31 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import Users from "./users";
 import UserGroups from "./user-groups";
 import { Grid, Container, Menu, MenuItem, Button } from "@material-ui/core";
 import AppBar from "@material-ui/core/AppBar";
 import Tabs from "@material-ui/core/Tabs";
 import Tab from "@material-ui/core/Tab";
+import CloseIcon from "@material-ui/icons/Close";
 
 import "./CSS/container.css";
-import { useState } from "react";
+
+
+function TabButton(props) {
+  return (
+    <div style={{display: "grid", gridTemplateColumns: "80% 20%", justifyItems: "center"}}>
+      <p>{props.label}</p>
+      <Button
+        style={{padding: "0", width:"100%"}}
+        onClick={props.onClick}
+      > <CloseIcon color="secondary" /> </Button>
+    </div>
+  );
+}
 
 const ContainerComponent = () => {
   const [menuArr, setMenuArr] = useState([]);
   const [curTab, setCurTab] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
-  console.log(menuArr);
 
   function handleMenuOpen(event) {
     setAnchorEl(event.currentTarget);
@@ -35,10 +47,21 @@ const ContainerComponent = () => {
   function handleTabChange(event, newValue) {
     setCurTab(newValue);
   }
+  function handleTabClose(index) {
+    
+  }
+
+  useEffect(() => {
+
+  }, [menuArr])
 
   return (
-    <Container className="container" style={{ padding: "0" }} elevation="5">
-
+    <Container
+      className="container"
+      maxWidth="false"
+      elevation="5"
+      style={{ padding: "0 1em" }}
+    >
       <Grid className="topBar" container>
         <Button
           aria-controls="menu"
@@ -66,33 +89,31 @@ const ContainerComponent = () => {
         </Menu>
       </Grid>
 
-
-
       <Grid container>
         <AppBar position="static" style={{ margin: "0", padding: "0" }}>
           <Tabs value={curTab} onChange={handleTabChange}>
-            {menuArr.map((comp) => {
-              return <Tab label={comp.title}></Tab>;
+            {menuArr.map((comp, index) => {
+              return <Tab label={<TabButton label={comp.title} onClick={() => {menuArr.splice(index, 1)}} />}></Tab>;
             })}
           </Tabs>
         </AppBar>
-        
+
         {menuArr.map((comp, index) => {
           return (
             <div
               key={index}
-              style={{ display: index === curTab ? "block" : "none", minWidth: "100%" }}
+              style={{
+                display: index === curTab ? "block" : "none",
+                minWidth: "100%",
+              }}
             >
               {comp.component}
             </div>
           );
         })}
       </Grid>
-      
-      
-      <Grid container id="content">
-      
-      </Grid>
+
+      <Grid container id="content"></Grid>
     </Container>
   );
 };
