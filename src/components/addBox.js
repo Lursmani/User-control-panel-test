@@ -29,17 +29,18 @@ const AddBox = (props) => {
     repeatPassword: "",
     userGroups: [],
   });
-  const [cboxError, setCboxError] = useState(false)
-  const [dialogOpen, setDialogOpen] = useState(false)
+  const [passwordRequired, setPasswordRequired] = useState(true);
+  const [cboxError, setCboxError] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
   const [dialogText, setDialogText] = useState({
     message: "",
     type: "",
-  })
-  
+  });
 
   function handleDialog() {
-      setDialogOpen(true)
+    setDialogOpen(true);
   }
+
 
   let parseUserGroups = () => {
     let groupArr = [];
@@ -58,44 +59,93 @@ const AddBox = (props) => {
     }
     setParams({ ...params, userGroups: newArr });
   }
+  function handleCheckboxesEdit(event) {
+    let newArr = [...params.userGroups, parseInt(event.target.value)];
+    params.userGroups.map((x) => {
+      if (x.id === parseInt(event.target.value)) {
+        return (newArr = newArr.filter((x) => !x));
+      } else if (params.userGroups.includes(parseInt(event.target.value))) {
+        return (newArr = newArr.filter(
+          (x) => x !== parseInt(event.target.value)
+        ));
+      }
+    });
+    setParams({ ...params, userGroups: newArr });
+  }
 
+  function checkboxChecked(boxValue) {
+    if (params.userGroups.includes(boxValue)) {
+      return "checked";
+    } else if (params.userGroups.includes(!boxValue)) {
+      return "";
+    }
+  }
 
   useEffect(() => {
-    console.log(editMode)
-    console.log(userID)
-    let curUserGroup = []
+    console.log(editMode);
+    console.log(userID);
+    let curUserGroup = [];
     if (editMode) {
-      axios.get(`http://13.51.98.179:8888/users/${userID}`)
-      .then(user => {
-        user.data.userGroups.map(x => curUserGroup.push(x))
-        setParams({...params, 
-        username: user.data.username,
-        fullName: user.data.fullName,
-        email: user.data.email,
-         userGroups: curUserGroup
+      axios.get(`http://13.51.98.179:8888/users/${userID}`).then((user) => {
+        console.log(user.data.userGroups);
+        user.data.userGroups.map((x) => curUserGroup.push(x.id));
+        setParams({
+          ...params,
+          username: user.data.username,
+          fullName: user.data.fullName,
+          email: user.data.email,
+          userGroups: curUserGroup,
 
-         // FIX THIS FIRST 
-      })})
+          // FIX THIS FIRST
+        });
+      });
     }
-  }, [])
-
+  }, []);
 
   function handleSubmit(e) {
     e.preventDefault();
-    params.userGroups.length === 0 ? setCboxError(true) : setCboxError(false)
+    params.userGroups.length > 0 ? setCboxError(false) : setCboxError(true);
     if (!editMode && params.userGroups.length !== 0) {
       axios
         .post("http://13.51.98.179:8888/users", params)
-        .then((response) => {console.log(response.response)
-          setDialogText({...dialogText, message: response.response.data.message})  
-          setDialogOpen(true)})
-        .catch((error) => {console.log(error.response)
-          setDialogText({...dialogText, message: error.response.data.message, type: error.response.data.type})
-          setDialogOpen(true)});
+        .then((response) => {
+          setDialogText({
+            ...dialogText,
+            message: "მომხამრებელი წარმატებით შეიქმნა",
+            type: "დადასტურება",
+          });
+          setDialogOpen(true);
+        })
+        .catch((error) => {
+          console.log(error);
+          setDialogText({
+            ...dialogText,
+            message: error.response.data.message,
+            type: error.response.data.type,
+          });
+          setDialogOpen(true);
+        });
     } else if (editMode && params.userGroups.length !== 0) {
-      axios.put(`http://13.51.98.179:8888/users/${userID}`, params);
+      axios
+        .put(`http://13.51.98.179:8888/users/${userID}`, params)
+        .then((response) => {
+          setDialogText({
+            ...dialogText,
+            message: "ცვლილებები დამახსოვრებულია",
+            type: "წარმატება",
+          });
+          setDialogOpen(true);
+        })
+        .catch((error) => {
+          console.log(error.response);
+          setDialogText({
+            ...dialogText,
+            message: error.response.data.message,
+            type: error.response.data.type,
+          });
+          setDialogOpen(true);
+        });
     }
-  
   }
 
   function nameChange(event) {
@@ -115,19 +165,19 @@ const AddBox = (props) => {
   }
 
   useEffect(() => {
-    parseUserGroups();
-    let curParams = {
-      username: params.username,
-      fullName: params.fullName,
-      email: params.email,
-      password: params.password,
-      repeatPassword: params.repeatPassword,
-      userGroups: parseUserGroups(),
-    };
-
     console.log(params);
-    console.log(curParams);
   }, [params]);
+  useEffect(() => {
+    let required;
+
+    if (editMode) {
+      if (params.password === "" && params.repeatPassword === "") {
+        required = false;
+      } else required = true;
+    } else required = true;
+    console.log(required);
+    setPasswordRequired(required);
+  }, [params.password, params.repeatPassword]);
 
   return (
     <Grid container>
@@ -150,6 +200,11 @@ const AddBox = (props) => {
               direction="column"
               style={{ width: "100%" }}
             >
+              {cboxError && (
+                <FormHelperText error style={{ padding: "0 2em" }}>
+                  ! აუცილებელია მინიმუმ ერთი ჯგუფის მონიშვნა !
+                </FormHelperText>
+              )}
               <Grid item style={{ width: "100%" }}>
                 <TextField
                   variant="outlined"
@@ -176,6 +231,7 @@ const AddBox = (props) => {
                   onChange={emailChange}
                   value={params.email}
                   label="ელ. ფოსტა"
+                  type="email"
                   style={{ width: "100%" }}
                   required
                 />
@@ -188,7 +244,7 @@ const AddBox = (props) => {
                   label="პაროლი"
                   type="password"
                   style={{ width: "100%" }}
-                  required
+                  required={passwordRequired}
                 />
               </Grid>
               <Grid item>
@@ -199,22 +255,26 @@ const AddBox = (props) => {
                   label="გაიმეორეთ პაროლი"
                   type="password"
                   style={{ width: "100%" }}
-                  required
+                  required={passwordRequired}
                 />
               </Grid>
             </Grid>
           )}
           {curTab === 1 && (
             <Grid container direction="column">
-              <FormControl required = {params.userGroups.length !== 0 ? false : true}>
-                <FormGroup >
+              <FormControl
+                required={params.userGroups.length !== 0 ? false : true}
+              >
+                <FormGroup>
                   <FormControlLabel
                     control={
                       <Checkbox
                         value={1}
-                        onChange={handleCheckboxes}
+                        onChange={
+                          editMode ? handleCheckboxesEdit : handleCheckboxes
+                        }
                         id="GroupUser"
-                        checked={params.userGroups.includes(1) ? "checked" : ""}
+                        checked={checkboxChecked(1)}
                       />
                     }
                     label="ყველაფრის ნახვის უფლება"
@@ -223,15 +283,21 @@ const AddBox = (props) => {
                     control={
                       <Checkbox
                         value={2}
-                        onChange={handleCheckboxes}
+                        onChange={
+                          editMode ? handleCheckboxesEdit : handleCheckboxes
+                        }
                         id="GroupAdmin"
-                        checked={params.userGroups.includes(2) ? "checked" : ""}
+                        checked={checkboxChecked(2)}
                       />
                     }
                     label="ადმინისტრატორი"
                   />
                 </FormGroup>
-                {cboxError && <FormHelperText  error>! აუცილებელია მინიმუმ ერთის მონიშვნა !</FormHelperText>}
+                {cboxError && (
+                  <FormHelperText error>
+                    ! აუცილებელია მინიმუმ ერთის მონიშვნა !
+                  </FormHelperText>
+                )}
               </FormControl>
             </Grid>
           )}
@@ -245,8 +311,13 @@ const AddBox = (props) => {
               Submit
             </Button>
             <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
-              <ErrorBox text = {dialogText.message} title = {dialogText.type} closeFunction={() => setDialogOpen(false)} />
+              <ErrorBox
+                text={dialogText.message}
+                title={dialogText.type}
+                closeFunction={() => setDialogOpen(false)}
+              />
             </Dialog>
+            
           </Grid>
         </form>
       </Grid>
@@ -254,39 +325,42 @@ const AddBox = (props) => {
   );
 };
 
-
-
-
-
-
 const ErrorBox = (props) => {
-
   const textTranslations = (text) => {
     if (text === "User with same username already exists") {
-      return "მომხმარებელი ამ სახელით უკვე არსებობს"
-    }
-  }
+      return "მომხმარებელი ამ სახელით უკვე არსებობს";
+    } else return text;
+  };
   const titleTranslations = (title) => {
     if (title === "FAILURE") {
-      return "შეცდომა"
-    }
-  }
+      return "შეცდომა";
+    } else return title;
+  };
 
   return (
     <Grid container direction="column" justify="center">
       <Grid item>
-        <AppBar position = "static" color = "secondary">
-          <h1 style={{padding: "0 2rem "}}>{titleTranslations(props.title)}</h1>
+        <AppBar position="static" color="secondary">
+          <h1 style={{ padding: "0 2rem " }}>
+            {titleTranslations(props.title)}
+          </h1>
         </AppBar>
       </Grid>
-        <Grid item style={{padding: "2rem"}}>
-          <p >{textTranslations(props.text)}</p>
-        </Grid>
-        <Grid container justify="center" style={{padding: "0 0 2em 0"}}>
-          <Button onClick={props.closeFunction} variant="contained" color = "primary" >დახურვა</Button>
-        </Grid>
+      <Grid item style={{ padding: "2rem" }}>
+        <p>{textTranslations(props.text)}</p>
+      </Grid>
+      <Grid container justify="center" style={{ padding: "0 0 2em 0" }}>
+        <Button
+          onClick={props.closeFunction}
+          variant="contained"
+          color="primary"
+        >
+          დახურვა
+        </Button>
+      </Grid>
     </Grid>
-  )
-}
+  );
+};
+
 
 export default AddBox;

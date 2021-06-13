@@ -8,12 +8,11 @@ import axios from "axios";
 import {
   Table,
   TableHead,
-  TableFooter,
   TableBody,
   TableCell,
   TableRow,
   TableContainer,
-  TablePagination,
+  AppBar,
 } from "@material-ui/core";
 import EditIcon from "@material-ui/icons/Edit"
 import FiberManualRecordIcon from "@material-ui/icons/FiberManualRecord"
@@ -28,6 +27,7 @@ const classes = makeStyles({
 });
 
 const Users = () => {
+  const [deleteOpen, setDeleteOpen] = useState(false)
   const [userData, setUserData] = useState();
   const [filter, setFilter] = useState({
     userName: "",
@@ -62,6 +62,15 @@ const Users = () => {
     { name: "არააქტიური", value: false },
     { name: "აქტიური/არააქტიური", value: "" },
   ];
+
+  function handleDelete(user) {
+    setDeleteOpen(true)
+    setEditingUser(user)
+  }
+  function handleDeleteClose() {
+    setEditingUser(null)
+    setDeleteOpen(false)
+  }
 
   useEffect(() => {
     axios
@@ -103,7 +112,7 @@ const Users = () => {
           email: filter.email,
           userGroup: filter.userGroup,
           active: filter.active,
-          ...(filter.username === "" ? {} : { username: filter.username }),
+          ...(filter.userName === "" ? {} : { username: filter.userName }),
         },
       })
       .then((res) => setUserData(res.data))
@@ -119,7 +128,7 @@ const Users = () => {
           page: curPage,
           fullName: filter.fullName,
           email: filter.email,
-          userGroup: filter.userGroup,
+          groupId: filter.userGroup,
           active: filter.active,
           ...(filter.username === "" ? {} : { username: filter.username }),
         },
@@ -137,6 +146,7 @@ const Users = () => {
   }
   function handleManageClose() {
     setManageOpen(false)
+    setEditingUser(null)
     // setEditMode(false)
   }
   function handleEditOpen(user) {
@@ -184,7 +194,7 @@ const Users = () => {
                   </Button>
                 </TableCell>
                 <TableCell>
-                  <Button color="primary" variant = "contained">
+                  <Button color="primary" variant = "contained" onClick={() => handleDelete(user.id)}>
                     <DeleteForeverOutlinedIcon />
                   </Button>
                 </TableCell>
@@ -274,6 +284,9 @@ const Users = () => {
               <Dialog open={manageOpen} onClose={handleManageClose} >
                   <AddBox userID = {editingUser} editMode = {editingUser === null ? false : true} />
                 </Dialog>
+                <Dialog open={deleteOpen} onClose={handleDeleteClose}>
+              <DeleteBox  onClose={handleDeleteClose} userID = {editingUser} />
+            </Dialog>
             </Grid>
           </Grid>
         </form>
@@ -326,5 +339,31 @@ const Users = () => {
     </Grid>
   );
 };
+
+
+
+const DeleteBox = (props) => {
+
+  function deleteUser(user) {
+      axios.delete(`http://13.51.98.179:8888/users/${user}`)
+      props.onClose()
+  }
+
+  return (
+    <Grid container>
+      <AppBar position="static" style={{ margin: "0", padding: "0" }} color="secondary">
+        <h3 style={{padding: "0.5em 2em"}}>დადასტურება</h3>
+      </AppBar>
+      <Grid container>
+        <p style={{padding: "1em 2em"}}>დარწმუნებული ხართ, რომ გსურთ მომხმარებლის წაშლა?</p>
+      </Grid>
+      <Grid container justify="space-around" style={{padding: "1em"}}>
+        <Button  onClick={() => deleteUser(props.userID)} variant="contained" color="secondary">დიახ</Button>
+        <Button onClick={() => props.onClose()} variant="contained" color="primary">არა</Button>
+      </Grid>
+    </Grid>
+  );
+};
+
 
 export default Users;
