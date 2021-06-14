@@ -3,7 +3,6 @@ import AddBox from "./addBox"
 import Grid from "@material-ui/core/Grid";
 import { makeStyles, Paper, TextField, Button, Dialog } from "@material-ui/core";
 import { Autocomplete, Pagination } from "@material-ui/lab";
-import AddIcon from "@material-ui/icons/Add";
 import axios from "axios";
 import {
   Table,
@@ -18,6 +17,7 @@ import EditIcon from "@material-ui/icons/Edit"
 import FiberManualRecordIcon from "@material-ui/icons/FiberManualRecord"
 import FiberManualRecordOutlinedIcon from "@material-ui/icons/FiberManualRecordOutlined"
 import DeleteForeverOutlinedIcon from '@material-ui/icons/DeleteForeverOutlined';
+import AddIcon from "@material-ui/icons/Add";
 import "./CSS/users.css";
 
 const classes = makeStyles({
@@ -63,14 +63,7 @@ const Users = () => {
     { name: "აქტიური/არააქტიური", value: "" },
   ];
 
-  function handleDelete(user) {
-    setDeleteOpen(true)
-    setEditingUser(user)
-  }
-  function handleDeleteClose() {
-    setEditingUser(null)
-    setDeleteOpen(false)
-  }
+ 
 
   useEffect(() => {
     axios
@@ -93,17 +86,6 @@ const Users = () => {
   }
 
   function getData() {
-    const searchParams = {
-      limit: 10,
-      page: 0,
-      fullName: filter.fullName,
-      email: filter.email,
-      username: filter.userName,
-      userGroup: filter.userGroup,
-      active: filter.active,
-    };
-    console.log(searchParams);
-
     axios
       .get("http://13.51.98.179:8888/users", {
         params: {
@@ -117,6 +99,16 @@ const Users = () => {
       })
       .then((res) => setUserData(res.data))
       .then(setDataReceived(true));
+  }
+
+  function handleDelete(user) {
+    setDeleteOpen(true)
+    setEditingUser(user)
+  }
+  function handleDeleteClose() {
+    getData()
+    setEditingUser(null)
+    setDeleteOpen(false)
   }
 
   function handlePageChange(event, value) {
@@ -194,7 +186,7 @@ const Users = () => {
                   </Button>
                 </TableCell>
                 <TableCell>
-                  <Button color="primary" variant = "contained" onClick={() => handleDelete(user.id)}>
+                  <Button color="secondary" variant = "contained" onClick={() => handleDelete(user.id)}>
                     <DeleteForeverOutlinedIcon />
                   </Button>
                 </TableCell>
@@ -282,10 +274,10 @@ const Users = () => {
                 <AddIcon />
               </Button>
               <Dialog open={manageOpen} onClose={handleManageClose} >
-                  <AddBox userID = {editingUser} editMode = {editingUser === null ? false : true} />
+                  <AddBox userID = {editingUser} editMode = {editingUser === null ? false : true} onClose = {handleManageClose} />
                 </Dialog>
                 <Dialog open={deleteOpen} onClose={handleDeleteClose}>
-              <DeleteBox  onClose={handleDeleteClose} userID = {editingUser} />
+              <DeleteBox getData={getData}  onClose={handleDeleteClose} userID = {editingUser} />
             </Dialog>
             </Grid>
           </Grid>
@@ -347,7 +339,7 @@ const DeleteBox = (props) => {
   function deleteUser(user) {
       axios.delete(`http://13.51.98.179:8888/users/${user}`)
       props.onClose()
-  }
+      }
 
   return (
     <Grid container>

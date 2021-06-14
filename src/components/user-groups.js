@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
+import EditBox from "./groupEditBox"
 import Grid from "@material-ui/core/Grid";
 import { makeStyles, Paper, TextField, Button } from "@material-ui/core";
 import {
@@ -9,9 +10,17 @@ import {
   TableCell,
   TableRow,
   TableContainer,
+  Dialog,
+  Switch
 } from "@material-ui/core";
 import "./CSS/users.css";
 import { Autocomplete } from "@material-ui/lab";
+import EditIcon from "@material-ui/icons/Edit";
+import FiberManualRecordIcon from "@material-ui/icons/FiberManualRecord";
+import FiberManualRecordOutlinedIcon from "@material-ui/icons/FiberManualRecordOutlined";
+import DeleteForeverOutlinedIcon from "@material-ui/icons/DeleteForeverOutlined";
+import AddIcon from "@material-ui/icons/Add";
+import DeleteBox from "./groupDeleteBox"
 
 const classes = makeStyles({
   tableHeader: {
@@ -26,7 +35,24 @@ const UserGroups = (props) => {
   const [fText, setfText] = useState("");
   const [fPermissions, setfPermissions] = useState();
   const [fActive, setfActive] = useState("");
+  const [editingGroupID, setEditingGroupID] = useState(null)
+  const [dialogOpen, setDialogOpen] = useState(false)
+  const [editMode, setEditMode] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false)
 
+
+  function handleDeleteOpen(groupID) {
+    setDeleteOpen(true)
+    setEditingGroupID(groupID)
+  }
+  function handleDeleteClose() {
+    setDeleteOpen(false)
+    setEditingGroupID(null)
+  }
+
+
+
+console.log(groupData)
   function formatDate(rawDate) {
     const date = rawDate.match(/.*(?=T)/);
     const time = rawDate.match(/(?<=T).*(?=\.)/);
@@ -40,7 +66,7 @@ const UserGroups = (props) => {
     { name: "აქტიური/არააქტიური", value: "" },
   ];
   const comboPermissions = [
-    {name: "ყველა", value: undefined},
+    { name: "ყველა", value: undefined },
     { name: "ავარიების მართვა", value: "CAR_ACCIDENTS_MANAGE" },
     { name: "ავარიების ნახვა", value: "CAR_ACCIDENTS_VIEW" },
     { name: "ჯგუფების მართვა", value: "USER_GROUPS_MANAGE" },
@@ -54,7 +80,6 @@ const UserGroups = (props) => {
   ];
 
   function handleSubmit() {
-    let permissions = fPermissions && fPermissions;
 
     axios
       .get("http://13.51.98.179:8888/userGroups", {
@@ -68,17 +93,37 @@ const UserGroups = (props) => {
       .then(console.log(groupData));
   }
 
+ 
+
   const test = {
     active: fActive,
     name: fText,
     ...(fPermissions ? { permission: fPermissions } : {}),
-  }
+  };
   useEffect(() => {
     console.log(fActive);
     console.log(fText);
     console.log(fPermissions);
-    console.log(test)
+    console.log(test);
   }, [fActive, fText, fPermissions]);
+
+
+  function handleGroupAddOpen() {
+    setDialogOpen(true)
+    setEditMode(false)
+  }
+  function handleGroupEditOpen(groupID) {
+    setEditingGroupID(groupID)
+    setDialogOpen(groupID !== null && true)
+    setEditMode(true)
+    console.log(editingGroupID)
+  }
+  function handleDialogClose() {
+    setDialogOpen(false)
+    setEditingGroupID(null)
+    setEditMode(false)
+  }
+
 
   return (
     <Grid container>
@@ -91,8 +136,9 @@ const UserGroups = (props) => {
             alignItems="center"
             style={{ padding: "0.5em 1em" }}
           >
-            <Grid item xs={2} alignItems="flex-end">
+            <Grid item xs={4} alignItems="flex-end">
               <TextField
+              fullWidth
                 value={fText}
                 onChange={(event) => setfText(event.target.value)}
                 variant="outlined"
@@ -110,7 +156,7 @@ const UserGroups = (props) => {
                 )}
               ></Autocomplete>
             </Grid>
-            <Grid item xs={2}>
+            <Grid item xs={3}>
               <Autocomplete
                 options={comboStatus}
                 getOptionLabel={(option) => option.name}
@@ -120,7 +166,7 @@ const UserGroups = (props) => {
                 )}
               ></Autocomplete>
             </Grid>
-            <Grid item xs={2}>
+            <Grid item xs={1}>
               <Button
                 onClick={handleSubmit}
                 color="primary"
@@ -128,7 +174,17 @@ const UserGroups = (props) => {
               >
                 ძებნა
               </Button>
+              
             </Grid>
+            <Grid item xs={1}>
+                <Button
+                  onClick={handleGroupAddOpen}
+                  color="primary"
+                  variant="contained"
+                >
+                  <AddIcon  />
+                </Button>
+              </Grid>
           </Grid>
         </form>
       </Grid>
@@ -167,11 +223,21 @@ const UserGroups = (props) => {
                     <TableRow>
                       <TableCell>{x.id}</TableCell>
                       <TableCell>{x.name}</TableCell>
-                      <TableCell>{x.active}</TableCell>
+                      <TableCell>
+                        {x.active ? (<FiberManualRecordIcon style={{ color: "green" }} />) : (<FiberManualRecordOutlinedIcon color="secondary" />)}
+                      </TableCell>
                       <TableCell>{formatDate(x.createTime)}</TableCell>
                       <TableCell>{formatDate(x.lastUpdateTime)}</TableCell>
-                      <TableCell>Edit</TableCell>
-                      <TableCell>Delete</TableCell>
+                      <TableCell>
+                        <Button color="primary" variant="contained" onClick = {() => handleGroupEditOpen(x.id)}>
+                          <EditIcon />
+                        </Button>
+                      </TableCell>
+                      <TableCell>
+                        <Button color="secondary" variant="contained" onClick = {() => handleDeleteOpen(x.id)}>
+                          <DeleteForeverOutlinedIcon />
+                        </Button>
+                      </TableCell>
                     </TableRow>
                   );
                 })}
@@ -179,6 +245,12 @@ const UserGroups = (props) => {
           </Table>
         </TableContainer>
       </Grid>
+      <Dialog open = {dialogOpen} onClose = {() => handleDialogClose()}>
+                <EditBox editMode = {editMode} groupID = {editingGroupID} onClose = {handleDialogClose} />
+      </Dialog>
+      <Dialog open={deleteOpen} onClose = {() => handleDeleteClose()}>
+          <DeleteBox groupID = {editingGroupID} onClose = {handleDeleteClose} />
+      </Dialog>
     </Grid>
   );
 };

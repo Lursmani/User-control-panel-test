@@ -15,6 +15,7 @@ import axios from "axios";
 import AppBar from "@material-ui/core/AppBar";
 import Tabs from "@material-ui/core/Tabs";
 import Tab from "@material-ui/core/Tab";
+import ErrorBox from "./serverResponseDialog"
 
 const AddBox = (props) => {
   let editMode = props.editMode;
@@ -308,7 +309,10 @@ const AddBox = (props) => {
               size="large"
               type="submit"
             >
-              Submit
+              შენახვა
+            </Button>
+            <Button onClick={() => props.onClose()} variant="contained" color="secondary">
+              დახურვა
             </Button>
             <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)}>
               <ErrorBox
@@ -320,43 +324,6 @@ const AddBox = (props) => {
             
           </Grid>
         </form>
-      </Grid>
-    </Grid>
-  );
-};
-
-const ErrorBox = (props) => {
-  const textTranslations = (text) => {
-    if (text === "User with same username already exists") {
-      return "მომხმარებელი ამ სახელით უკვე არსებობს";
-    } else return text;
-  };
-  const titleTranslations = (title) => {
-    if (title === "FAILURE") {
-      return "შეცდომა";
-    } else return title;
-  };
-
-  return (
-    <Grid container direction="column" justify="center">
-      <Grid item>
-        <AppBar position="static" color="secondary">
-          <h1 style={{ padding: "0 2rem " }}>
-            {titleTranslations(props.title)}
-          </h1>
-        </AppBar>
-      </Grid>
-      <Grid item style={{ padding: "2rem" }}>
-        <p>{textTranslations(props.text)}</p>
-      </Grid>
-      <Grid container justify="center" style={{ padding: "0 0 2em 0" }}>
-        <Button
-          onClick={props.closeFunction}
-          variant="contained"
-          color="primary"
-        >
-          დახურვა
-        </Button>
       </Grid>
     </Grid>
   );
