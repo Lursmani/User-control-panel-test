@@ -6,7 +6,7 @@ import axios from 'axios'
 const DeleteBox = (props) => {
 
     function deleteUser(groupID) {
-        axios.delete(`http://13.51.98.179:8888/userGroups/${groupID}`)
+        axios.delete(`${process.env.REACT_APP_USERGROUPS_API}/${groupID}`)
         props.onClose()
     }
   

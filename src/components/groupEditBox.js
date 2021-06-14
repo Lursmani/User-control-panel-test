@@ -37,7 +37,7 @@ const GroupEditBox = (props) => {
   useEffect(() => {
       setEditMode(props.editMode)
     axios
-      .get(`http://13.51.98.179:8888/userGroups/${props.groupID}`)
+      .get(`${process.env.REACT_APP_USERGROUPS_API}/${props.groupID}`)
       .then((response) =>
         setParams({
           ...params,
@@ -52,7 +52,7 @@ const GroupEditBox = (props) => {
     e.preventDefault();
     if (editMode) {
       axios
-        .put(`http://13.51.98.179:8888/userGroups/${props.groupID}`, params)
+        .put(`${process.env.REACT_APP_USERGROUPS_API}/${props.groupID}`, params)
         .then((response) =>
           {setDialogText({
             ...dialogText,
@@ -62,7 +62,6 @@ const GroupEditBox = (props) => {
           setDialogOpen(true)}
         )
         .catch((error) => {
-          console.log(error);
           setDialogText({
             ...dialogText,
             message: error.response.data.message,
@@ -72,7 +71,7 @@ const GroupEditBox = (props) => {
         });
     } else if (!editMode) {
       axios
-        .post(`http://13.51.98.179:8888/userGroups/`, params)
+        .post(`${process.env.REACT_APP_USERGROUPS_API}`, params)
         .then((response) =>
           {setDialogText({
             ...dialogText,
@@ -82,7 +81,6 @@ const GroupEditBox = (props) => {
             setDialogOpen(true)}
         )
         .catch((error) => {
-          console.log(error);
           setDialogText({
             ...dialogText,
             message: error.response.data.message,
@@ -127,9 +125,6 @@ const GroupEditBox = (props) => {
     setParams({ ...params, userPermissionCodes: newArr });
   }
 
-  useEffect(() => {
-    console.log(params);
-  }, [params]);
 
   return (
     <Grid container style={{ padding: "1rem" }}>

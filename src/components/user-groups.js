@@ -82,7 +82,7 @@ console.log(groupData)
   function handleSubmit() {
 
     axios
-      .get("http://13.51.98.179:8888/userGroups", {
+      .get(`${process.env.REACT_APP_USERGROUPS_API}`, {
         params: {
           active: fActive,
           name: fText,
@@ -90,22 +90,12 @@ console.log(groupData)
         },
       })
       .then((res) => setGroupData(res.data))
-      .then(console.log(groupData));
   }
 
  
 
-  const test = {
-    active: fActive,
-    name: fText,
-    ...(fPermissions ? { permission: fPermissions } : {}),
-  };
-  useEffect(() => {
-    console.log(fActive);
-    console.log(fText);
-    console.log(fPermissions);
-    console.log(test);
-  }, [fActive, fText, fPermissions]);
+ 
+ 
 
 
   function handleGroupAddOpen() {
@@ -122,6 +112,23 @@ console.log(groupData)
     setDialogOpen(false)
     setEditingGroupID(null)
     setEditMode(false)
+  }
+  function clearFilter() {
+    setfPermissions(undefined)
+    setfActive("")
+    setfText("")
+
+    axios
+    .get(`${process.env.REACT_APP_USERGROUPS_API}`, {
+      params: {
+        active: "",
+        name: "",
+        ...(fPermissions ? { permissionCode: fPermissions } : {}),
+      },
+    })
+    .then((res) => setGroupData(res.data))
+
+
   }
 
 
@@ -142,6 +149,7 @@ console.log(groupData)
                 value={fText}
                 onChange={(event) => setfText(event.target.value)}
                 variant="outlined"
+                label="ჯგუფის სახელი"
               ></TextField>
             </Grid>
             <Grid item xs={3}>
@@ -156,7 +164,7 @@ console.log(groupData)
                 )}
               ></Autocomplete>
             </Grid>
-            <Grid item xs={3}>
+            <Grid item xs={2}>
               <Autocomplete
                 options={comboStatus}
                 getOptionLabel={(option) => option.name}
@@ -183,6 +191,15 @@ console.log(groupData)
                   variant="contained"
                 >
                   <AddIcon  />
+                </Button>
+              </Grid>
+              <Grid item xs={1}>
+                <Button
+                  onClick={clearFilter}
+                  color="primary"
+                  variant="contained"
+                >
+                  გაწმენდა
                 </Button>
               </Grid>
           </Grid>

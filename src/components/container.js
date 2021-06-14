@@ -9,15 +9,23 @@ import CloseIcon from "@material-ui/icons/Close";
 
 import "./CSS/container.css";
 
-
 function TabButton(props) {
   return (
-    <div style={{display: "grid", gridTemplateColumns: "80% 20%", justifyItems: "center"}}>
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: "80% 20%",
+        justifyItems: "center",
+      }}
+    >
       <p>{props.label}</p>
       <Button
-        style={{padding: "0", width:"100%"}}
-        onClick={props.onClick}
-      > <CloseIcon color="secondary" /> </Button>
+        style={{ padding: "0", width: "100%" }}
+        onClick={() => props.onClick()}
+      >
+        {" "}
+        <CloseIcon style={{ color: "white" }} />{" "}
+      </Button>
     </div>
   );
 }
@@ -35,7 +43,7 @@ const ContainerComponent = () => {
   }
   function handleMenuUsers() {
     setAnchorEl(null);
-    setMenuArr([...menuArr, { component: <Users />, title: "მომხმარებელი" }]);
+    setMenuArr([...menuArr, { component: <Users />, title: "მომხმარებლები" }]);
   }
   function handleMenuUserGroups() {
     setAnchorEl(null);
@@ -47,29 +55,30 @@ const ContainerComponent = () => {
   function handleTabChange(event, newValue) {
     setCurTab(newValue);
   }
-  function handleTabClose(index) {
-    
+  function handleTabClose(index, num) {
+    menuArr.splice(index, 1);
+
+    // let originalArr = menuArr;
+    // if (index === 0) {
+    //   originalArr.shift();
+    // } else {
+    //   originalArr.splice(index, 1);
+    // }
+    // setMenuArr(originalArr);
   }
 
   useEffect(() => {
-
-  }, [menuArr])
+    console.log(menuArr);
+  }, [menuArr, curTab]);
 
   return (
-    <Container
-      className="container"
-      maxWidth="false"
-      elevation="5"
-      style={{ padding: "0 1em" }}
-    >
+    <Container className="container" maxWidth="false" elevation="5">
       <Grid className="topBar" container>
         <Button
-          aria-controls="menu"
-          aria-haspopup="true"
           onClick={handleMenuOpen}
           variant="contained"
           color="primary"
-          style={{ margin: "1vh 0.3vw" }}
+          style={{ margin: "1vh 1vw" }}
           id="menu-button"
         >
           Menu
@@ -93,7 +102,16 @@ const ContainerComponent = () => {
         <AppBar position="static" style={{ margin: "0", padding: "0" }}>
           <Tabs value={curTab} onChange={handleTabChange}>
             {menuArr.map((comp, index) => {
-              return <Tab label={<TabButton label={comp.title} onClick={() => {menuArr.splice(index, 1)}} />}></Tab>;
+              return (
+                <Tab
+                  label={
+                    <TabButton
+                      label={comp.title}
+                      onClick={() => handleTabClose(index, 1)}
+                    />
+                  }
+                ></Tab>
+              );
             })}
           </Tabs>
         </AppBar>

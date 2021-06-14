@@ -1,7 +1,13 @@
 import React, { useEffect, useState } from "react";
-import AddBox from "./addBox"
+import AddBox from "./addBox";
 import Grid from "@material-ui/core/Grid";
-import { makeStyles, Paper, TextField, Button, Dialog } from "@material-ui/core";
+import {
+  makeStyles,
+  Paper,
+  TextField,
+  Button,
+  Dialog,
+} from "@material-ui/core";
 import { Autocomplete, Pagination } from "@material-ui/lab";
 import axios from "axios";
 import {
@@ -13,10 +19,10 @@ import {
   TableContainer,
   AppBar,
 } from "@material-ui/core";
-import EditIcon from "@material-ui/icons/Edit"
-import FiberManualRecordIcon from "@material-ui/icons/FiberManualRecord"
-import FiberManualRecordOutlinedIcon from "@material-ui/icons/FiberManualRecordOutlined"
-import DeleteForeverOutlinedIcon from '@material-ui/icons/DeleteForeverOutlined';
+import EditIcon from "@material-ui/icons/Edit";
+import FiberManualRecordIcon from "@material-ui/icons/FiberManualRecord";
+import FiberManualRecordOutlinedIcon from "@material-ui/icons/FiberManualRecordOutlined";
+import DeleteForeverOutlinedIcon from "@material-ui/icons/DeleteForeverOutlined";
 import AddIcon from "@material-ui/icons/Add";
 import "./CSS/users.css";
 
@@ -27,7 +33,7 @@ const classes = makeStyles({
 });
 
 const Users = () => {
-  const [deleteOpen, setDeleteOpen] = useState(false)
+  const [deleteOpen, setDeleteOpen] = useState(false);
   const [userData, setUserData] = useState();
   const [filter, setFilter] = useState({
     userName: "",
@@ -40,11 +46,12 @@ const Users = () => {
   const [dataReceived, setDataReceived] = useState(false);
 
   // MODAL STATE
-  const [editingUser, setEditingUser] = useState(null)
-  const [manageOpen, setManageOpen] = useState(false)
+  const [editingUser, setEditingUser] = useState(null);
+  const [manageOpen, setManageOpen] = useState(false);
 
   const styles = classes();
 
+  // PAGINATION CALCULATION
   function pageCalc() {
     let pages;
     if (userData !== undefined) {
@@ -56,27 +63,19 @@ const Users = () => {
     }
     return pages;
   }
-  const groupCombo = {};
+
+  //
   const comboStatus = [
     { name: "აქტიური", value: true },
     { name: "არააქტიური", value: false },
     { name: "აქტიური/არააქტიური", value: "" },
   ];
 
- 
-
   useEffect(() => {
     axios
-      .get("http://13.51.98.179:8888/userGroups/forSelection")
-      //  .then(res => console.log(res.data.map(x => x.name)))
-      .then((res) => setUserGroupData(res.data.map((x) => x)))
-      .then(console.log(userGroupData))
+      .get(`${process.env.REACT_APP_USERGROUPS_API}/forSelection`)
+      .then((res) => setUserGroupData(res.data.map((x) => x)));
   }, []);
-
-  useEffect(() => {
-    console.log(filter);
-    console.log(userGroupData);
-  }, [filter, userGroupData]);
 
   function formatDate(rawDate) {
     const date = rawDate.match(/.*(?=T)/);
@@ -85,14 +84,38 @@ const Users = () => {
     return `${date} ${time}`;
   }
 
+  function resetFilter() {
+    setDataReceived(false);
+    setFilter({
+      userName: "",
+      fullName: "",
+      email: "",
+      userGroup: "",
+      active: "",
+    });
+    axios
+      .get(`${process.env.REACT_APP_USERS_API}`, {
+        params: {
+          limit: 10,
+          fullName: "",
+          email: "",
+          groupId: "",
+          active: "",
+          ...(filter.userName === "" ? {} : { username: filter.userName }),
+        },
+      })
+      .then((res) => setUserData(res.data))
+      .then(setDataReceived(true));
+  }
+
   function getData() {
     axios
-      .get("http://13.51.98.179:8888/users", {
+      .get(`${process.env.REACT_APP_USERS_API}`, {
         params: {
           limit: 10,
           fullName: filter.fullName,
           email: filter.email,
-          userGroup: filter.userGroup,
+          groupId: filter.userGroup,
           active: filter.active,
           ...(filter.userName === "" ? {} : { username: filter.userName }),
         },
@@ -102,19 +125,20 @@ const Users = () => {
   }
 
   function handleDelete(user) {
-    setDeleteOpen(true)
-    setEditingUser(user)
+    setDeleteOpen(true);
+    setEditingUser(user);
   }
   function handleDeleteClose() {
-    getData()
-    setEditingUser(null)
-    setDeleteOpen(false)
+    getData();
+    setEditingUser(null);
+    setDeleteOpen(false);
   }
 
   function handlePageChange(event, value) {
     let curPage = value - 1;
+
     axios
-      .get("http://13.51.98.179:8888/users", {
+      .get(`${process.env.REACT_APP_USERS_API}`, {
         params: {
           limit: 10,
           page: curPage,
@@ -129,38 +153,25 @@ const Users = () => {
       .then(setDataReceived(true));
   }
 
-
-
-
-
   function handleManageOpen() {
-    setManageOpen(true)
+    setManageOpen(true);
   }
   function handleManageClose() {
-    setManageOpen(false)
-    setEditingUser(null)
-    // setEditMode(false)
+    setManageOpen(false);
+    setEditingUser(null);
   }
   function handleEditOpen(user) {
-    setEditingUser(user)
-    // setEditMode(true)
-    setManageOpen(true)
+    setEditingUser(user);
+    setManageOpen(true);
   }
 
   function activeIcon(active) {
     if (!active) {
-      return <FiberManualRecordOutlinedIcon color = "secondary" />
+      return <FiberManualRecordOutlinedIcon color="secondary" />;
     } else {
-      return <FiberManualRecordIcon style={{color: "green"}} />
+      return <FiberManualRecordIcon style={{ color: "green" }} />;
     }
   }
-
-
-
-
-
-
-
 
   function renderRows() {
     return (
@@ -181,12 +192,20 @@ const Users = () => {
                 <TableCell>{formatDate(user.lastUpdateTime)}</TableCell>
                 <TableCell>{activeIcon(user.active)}</TableCell>
                 <TableCell>
-                  <Button color="primary" variant = "contained" onClick={() => handleEditOpen(user.id)}>
-                    <EditIcon  />
+                  <Button
+                    color="primary"
+                    variant="contained"
+                    onClick={() => handleEditOpen(user.id)}
+                  >
+                    <EditIcon />
                   </Button>
                 </TableCell>
                 <TableCell>
-                  <Button color="secondary" variant = "contained" onClick={() => handleDelete(user.id)}>
+                  <Button
+                    color="secondary"
+                    variant="contained"
+                    onClick={() => handleDelete(user.id)}
+                  >
                     <DeleteForeverOutlinedIcon />
                   </Button>
                 </TableCell>
@@ -242,7 +261,7 @@ const Users = () => {
             <Grid item xs={2}>
               <Autocomplete
                 options={userGroupData}
-                getOptionLabel={((option) => option.name)}
+                getOptionLabel={(option) => option.name}
                 onChange={(event, value) =>
                   value && setFilter({ ...filter, userGroup: value.id })
                 }
@@ -263,22 +282,42 @@ const Users = () => {
                 )}
               ></Autocomplete>
             </Grid>
-            <Grid item xs={1}>
-              <Button onClick={getData} variant="contained" color="primary">
-                ძებნა
-              </Button>
-             
+            <Grid
+              container
+              xs={1}
+              alignItems="center"
+              justify="center"
+              direction="row"
+              spacing={1}
+            >
+              <div style={{ width: "80%", display: "grid", gridGap: "3px" }}>
+                <Button
+                  style={{ padding: "5%" }}
+                  onClick={getData}
+                  variant="contained"
+                  color="primary"
+                >
+                  ძებნა
+                </Button>
+                <Button
+                  style={{ padding: "5%" }}
+                  variant="contained"
+                  color="primary"
+                  onClick={handleManageOpen}
+                >
+                  <AddIcon />
+                </Button>
+              </div>
             </Grid>
             <Grid item xs={1}>
-              <Button variant="contained" color="primary" onClick={handleManageOpen}>
-                <AddIcon />
+              <Button
+                style={{ height: "100%", width: "100%" }}
+                onClick={resetFilter}
+                variant="contained"
+                color="primary"
+              >
+                ფილტრის გაწმენდა
               </Button>
-              <Dialog open={manageOpen} onClose={handleManageClose} >
-                  <AddBox userID = {editingUser} editMode = {editingUser === null ? false : true} onClose = {handleManageClose} />
-                </Dialog>
-                <Dialog open={deleteOpen} onClose={handleDeleteClose}>
-              <DeleteBox getData={getData}  onClose={handleDeleteClose} userID = {editingUser} />
-            </Dialog>
             </Grid>
           </Grid>
         </form>
@@ -320,42 +359,72 @@ const Users = () => {
         </Table>
       </TableContainer>
       <Grid container justify="center">
-        {dataReceived && (<Pagination
-          shape="rounded"
-          color="primary"
-          count={pageCalc()}
-          onChange={handlePageChange}
-          style={{ padding: "0.5rem 0" }}
-        />)}
+        {dataReceived && (
+          <Pagination
+            shape="rounded"
+            color="primary"
+            count={pageCalc()}
+            onChange={handlePageChange}
+            style={{ padding: "0.5rem 0" }}
+          />
+        )}
       </Grid>
+      <Dialog open={manageOpen} onClose={handleManageClose}>
+        <AddBox
+          userID={editingUser}
+          editMode={editingUser === null ? false : true}
+          onClose={handleManageClose}
+        />
+      </Dialog>
+      <Dialog open={deleteOpen} onClose={handleDeleteClose}>
+        <DeleteBox
+          getData={getData}
+          onClose={handleDeleteClose}
+          userID={editingUser}
+        />
+      </Dialog>
     </Grid>
   );
 };
 
-
-
 const DeleteBox = (props) => {
-
   function deleteUser(user) {
-      axios.delete(`http://13.51.98.179:8888/users/${user}`)
-      props.onClose()
-      }
+    axios.delete(`${process.env.REACT_APP_USERS_API}/${user}`);
+    props.onClose();
+  }
 
   return (
     <Grid container>
-      <AppBar position="static" style={{ margin: "0", padding: "0" }} color="secondary">
-        <h3 style={{padding: "0.5em 2em"}}>დადასტურება</h3>
+      <AppBar
+        position="static"
+        style={{ margin: "0", padding: "0" }}
+        color="secondary"
+      >
+        <h3 style={{ padding: "0.5em 2em" }}>დადასტურება</h3>
       </AppBar>
       <Grid container>
-        <p style={{padding: "1em 2em"}}>დარწმუნებული ხართ, რომ გსურთ მომხმარებლის წაშლა?</p>
+        <p style={{ padding: "1em 2em" }}>
+          დარწმუნებული ხართ, რომ გსურთ მომხმარებლის წაშლა?
+        </p>
       </Grid>
-      <Grid container justify="space-around" style={{padding: "1em"}}>
-        <Button  onClick={() => deleteUser(props.userID)} variant="contained" color="secondary">დიახ</Button>
-        <Button onClick={() => props.onClose()} variant="contained" color="primary">არა</Button>
+      <Grid container justify="space-around" style={{ padding: "1em" }}>
+        <Button
+          onClick={() => deleteUser(props.userID)}
+          variant="contained"
+          color="secondary"
+        >
+          დიახ
+        </Button>
+        <Button
+          onClick={() => props.onClose()}
+          variant="contained"
+          color="primary"
+        >
+          არა
+        </Button>
       </Grid>
     </Grid>
   );
 };
-
 
 export default Users;

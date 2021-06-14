@@ -83,12 +83,9 @@ const AddBox = (props) => {
   }
 
   useEffect(() => {
-    console.log(editMode);
-    console.log(userID);
     let curUserGroup = [];
     if (editMode) {
-      axios.get(`http://13.51.98.179:8888/users/${userID}`).then((user) => {
-        console.log(user.data.userGroups);
+      axios.get(`${process.env.REACT_APP_USERS_API}/${userID}`).then((user) => {
         user.data.userGroups.map((x) => curUserGroup.push(x.id));
         setParams({
           ...params,
@@ -108,7 +105,7 @@ const AddBox = (props) => {
     params.userGroups.length > 0 ? setCboxError(false) : setCboxError(true);
     if (!editMode && params.userGroups.length !== 0) {
       axios
-        .post("http://13.51.98.179:8888/users", params)
+        .post(`${process.env.REACT_APP_USERS_API}`, params)
         .then((response) => {
           setDialogText({
             ...dialogText,
@@ -118,7 +115,6 @@ const AddBox = (props) => {
           setDialogOpen(true);
         })
         .catch((error) => {
-          console.log(error);
           setDialogText({
             ...dialogText,
             message: error.response.data.message,
@@ -128,7 +124,7 @@ const AddBox = (props) => {
         });
     } else if (editMode && params.userGroups.length !== 0) {
       axios
-        .put(`http://13.51.98.179:8888/users/${userID}`, params)
+        .put(`${process.env.REACT_APP_USERS_API}/${userID}`, params)
         .then((response) => {
           setDialogText({
             ...dialogText,
@@ -138,7 +134,6 @@ const AddBox = (props) => {
           setDialogOpen(true);
         })
         .catch((error) => {
-          console.log(error.response);
           setDialogText({
             ...dialogText,
             message: error.response.data.message,
@@ -166,7 +161,6 @@ const AddBox = (props) => {
   }
 
   useEffect(() => {
-    console.log(params);
   }, [params]);
   useEffect(() => {
     let required;
@@ -176,7 +170,6 @@ const AddBox = (props) => {
         required = false;
       } else required = true;
     } else required = true;
-    console.log(required);
     setPasswordRequired(required);
   }, [params.password, params.repeatPassword]);
 
